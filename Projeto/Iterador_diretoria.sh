@@ -25,7 +25,7 @@ function iterador_diretoria(){
             
                 fi
                 
-                ./Iterador_diretoria.sh $file $path_diretoria_destino $diretoria_incial   
+                ./Iterador_diretoria.sh $file $path_diretoria_destino   
                 
                 
             fi
@@ -35,4 +35,4 @@ function iterador_diretoria(){
 
 }
 
-iterador_diretoria $1 $2 $3
+iterador_diretoria $1 $2 
