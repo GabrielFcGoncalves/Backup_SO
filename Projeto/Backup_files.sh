@@ -1,21 +1,36 @@
 
 function Backup_files(){
-    diretoria_incial=$(echo $1 | cut -d'/' -f1)
     diretoria_atual="$1"
     path_diretoria_destino="$2"
 
     for file in "$diretoria_atual"/*; do
+
+        path_original_file="$file"
+    
+        relative_path="${path_original_file#$starting_dir/}"  
+        backup_file="$path_diretoria_destino/$relative_path" 
+
         
-            path_original_file="${file}"
+        if [ -f "$file" ]; then
 
-            path_backup_file="${path_diretoria_destino}/$(basename "$file")"
+            if [ ! -e "$backup_file" ]; then
+                echo "File $file is new. Backing up." 
+                cp -a "$file" "$backup_file"
 
-            echo $file
-            
-            if [ -f "$file" ]; then
-                cp -a "$file" "$path_backup_file"
+            else
+
+                md5_source=$(md5sum "$file" | awk '{ print $1 }')
+                md5_backup=$(md5sum "$backup_file" | awk '{ print $1 }')
+
+                if [ "$md5_source" != "$md5_backup" ]; then
+                        echo "File $file has been updated. Backing up now."
+                        cp -a "$file" "$backup_file"
+                fi
             fi
+        fi
     done
 }
 
+
+starting_dir="$1"
 Backup_files $1 $2

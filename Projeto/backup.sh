@@ -16,6 +16,9 @@ function iterador_diretoria(){
             
             backup_dir=$(dirname "$path_backup_file")  
             mkdir -p "$backup_dir"  
+
+            echo $backup_dir
+            echo $file
             
             if [ -f "$file" ]; then
                 cp -a "$file" "$path_backup_file"
