@@ -2,27 +2,29 @@
 
 function iterador_diretoria(){
 
-    diretoria_inicial=$(echo "$1" | cut -d'/' -f1)
     diretoria_atual="$1"
-    backup="${diretoria_atual}_backup"
-    path_diretoria_destino="$2/${backup}"
+    path_diretoria_destino="$2"
 
     for file in "$diretoria_atual"/*; do
         
-        original_file="$file"
-        backup_file="${path_diretoria_destino}${file#"$diretoria_inicial"}"
+        path_original_file="$file"
+        relative_path="${path_original_file#$starting_dir/}"
+        path_backup_file="$path_diretoria_destino/$relative_path"
 
-        if [ -f "$file" ]; then
+        if [ -f "$path_original_file" ]; then
 
-            md5_source=$(md5sum "$file" | awk '{ print $1 }')
-            md5_backup=$(md5sum "$backup_file" | awk '{ print $1 }')
+            md5_source=$(md5sum "$path_original_file" | awk '{ print $1 }')
+            md5_backup=$(md5sum "$path_backup_file" | awk '{ print $1 }')
 
             if [ "$md5_source" != "$md5_backup" ]; then
-                echo "$original_file $backup_file differ."
+                echo "$path_original_file $path_backup_file differ."
             fi
+            else  iterador_diretoria "$file" "$path_diretoria_destino"
         fi
-
+   
     done
 }
 
-iterador_diretoria "$1" "$2"
+path_diretoria_destino="$2/$(basename "$1")_backup"
+starting_dir=$1
+iterador_diretoria $starting_dir $path_diretoria_destino
