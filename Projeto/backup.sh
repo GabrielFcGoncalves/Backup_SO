@@ -1,5 +1,17 @@
 #!/bin/bash
 
+function check_dir_integ(){
+    if [ -z "$1" ] || [ ! -d "$1" ]; then
+    echo "Error: Source directory '$1' is not a valid path."
+    exit 1
+    fi
+
+    if [ -z "$2" ]; then
+        echo "Error: Destination directory '$2' is not a valid path."
+        exit 1
+    fi
+}
+
 function iterador_diretoria(){
     diretoria_atual="$1"
     path_diretoria_destino="$2"
@@ -25,31 +37,47 @@ function iterador_diretoria(){
 function main(){
     
     path_diretoria_destino="$2/$(basename "$starting_dir")_backup"
-    backup="${path_diretoria_destino}_backup"
   
    if [ ! -e "$path_diretoria_destino" ]; then
-        echo "$backup does not exist."
+        echo "$path_diretoria_destino does not exist."
         mkdir -p "$path_diretoria_destino"
-        echo "$backup has been created"
+        echo "$path_diretoria_destino has been created"
         iterador_diretoria "$starting_dir" "$path_diretoria_destino"
     else
-        echo "$backup already exists."
+        echo "$path_diretoria_destino already exists."
         ./Iterador_Backup.sh "$starting_dir" "$path_diretoria_destino"
     fi
     
 
 }
 
+# Parse options using getopts
+check_flag=false
+
+while getopts ":c" opt; do
+    case $opt in
+        c)
+            check_flag=true
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Shift positional parameters so $1 and $2 refer to source and destination directories
+shift $((OPTIND-1))
+
+check_dir_integ $1 $2
 
 starting_dir=$1
-
-# Check if the input path is absolute or relative
-if [[ "$starting_dir" = /* ]]; then
-  echo "Absolute path provided."
-else
-  echo "Relative path provided."
-  starting_dir=$(realpath "$1")
-    echo $starting_dir "REAL PATH"
+if [[ "$starting_dir" != /* ]]; then
+    starting_dir=$(realpath "$1")
 fi
 
 main $1 $2
+
+if $check_flag; then
+    echo "Using -c param"
+fi

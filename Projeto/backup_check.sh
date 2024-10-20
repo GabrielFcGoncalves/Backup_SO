@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function iterador_diretoria(){
+function dir_checker(){
 
     diretoria_atual="$1"
     path_diretoria_destino="$2"
@@ -19,7 +19,7 @@ function iterador_diretoria(){
             if [ "$md5_source" != "$md5_backup" ]; then
                 echo "$path_original_file $path_backup_file differ."
             fi
-            else  iterador_diretoria "$file" "$path_diretoria_destino"
+            else  dir_checker "$file" "$path_diretoria_destino"
         fi
    
     done
@@ -27,4 +27,13 @@ function iterador_diretoria(){
 
 path_diretoria_destino="$2/$(basename "$1")_backup"
 starting_dir=$1
-iterador_diretoria $starting_dir $path_diretoria_destino
+
+if [[ "$starting_dir" = /* ]]; then
+    starting_dir=$1
+else
+  starting_dir=$(realpath "$1")
+fi
+
+echo "Checker called"
+
+dir_checker $starting_dir $path_diretoria_destino
