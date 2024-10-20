@@ -6,9 +6,16 @@ function Backup_files(){
 
     for file in "$diretoria_atual"/*; do
         
+<<<<<<< Updated upstream
             path_original_file="${file}"
 
             path_backup_file="${path_diretoria_destino}/$(basename "$file")"
+=======
+        if [ -f "$file" ]; then
+            if [ ! -e "$path_diretoria_destino/$(basename $file)" ]; then
+                echo "File $file is new. Backing up." 
+                cp -a "$file" "$path_diretoria_destino"
+>>>>>>> Stashed changes
 
             echo $file
             
