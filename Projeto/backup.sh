@@ -24,18 +24,17 @@ function iterador_diretoria(){
 
 function main(){
     
-    diretoria_a_copiar="$1"
-    backup="${diretoria_a_copiar}_backup"
-    path_diretoria_destino="$2/$(basename "$1")_backup"
+    path_diretoria_destino="$2/$(basename "$starting_dir")_backup"
+    backup="${path_diretoria_destino}_backup"
   
    if [ ! -e "$path_diretoria_destino" ]; then
         echo "$backup does not exist."
-        mkdir "$path_diretoria_destino"
+        mkdir -p "$path_diretoria_destino"
         echo "$backup has been created"
-        iterador_diretoria "$diretoria_a_copiar" "$path_diretoria_destino"
+        iterador_diretoria "$starting_dir" "$path_diretoria_destino"
     else
         echo "$backup already exists."
-        ./Iterador_Backup.sh "$diretoria_a_copiar" "$path_diretoria_destino"
+        ./Iterador_Backup.sh "$starting_dir" "$path_diretoria_destino"
     fi
     
 
@@ -43,4 +42,14 @@ function main(){
 
 
 starting_dir=$1
+
+# Check if the input path is absolute or relative
+if [[ "$starting_dir" = /* ]]; then
+  echo "Absolute path provided."
+else
+  echo "Relative path provided."
+  starting_dir=$(realpath "$1")
+    echo $starting_dir "REAL PATH"
+fi
+
 main $1 $2
