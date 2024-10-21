@@ -1,5 +1,18 @@
 #!/bin/bash
 
+function check_dir_integ(){
+    if [ -z "$1" ] || [ ! -d "$1" ]; then
+    echo "Error: Source directory '$1' is not a valid path."
+    exit 1
+    fi
+
+    if [ -z "$2" ] || [ ! -d "$1" ]; then
+        echo "Error: Destination directory '$2' is not a valid path."
+        exit 1
+    fi
+}
+
+
 function dir_checker(){
 
     diretoria_atual="$1"
@@ -25,15 +38,19 @@ function dir_checker(){
     done
 }
 
-path_diretoria_destino="$2/$(basename "$1")_backup"
-starting_dir=$1
+check_dir_integ $1 $2
 
-if [[ "$starting_dir" = /* ]]; then
-    starting_dir=$1
-else
-  starting_dir=$(realpath "$1")
+starting_dir=$1
+if [[ "$starting_dir" != /* ]]; then
+    starting_dir=$(realpath "$1")
 fi
 
-echo "Checker called"
+end_dir=$2
+if [[ "$end_dir" != /* ]]; then
+    end_dir=$(realpath "$2")
+fi
+
+path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
+
 
 dir_checker $starting_dir $path_diretoria_destino
