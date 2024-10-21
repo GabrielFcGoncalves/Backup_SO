@@ -17,8 +17,7 @@ function iterador_diretoria(){
     path_diretoria_destino="$2"
 
     for file in "$diretoria_atual"/*; do
-        path_original_file="$file"
-        relative_path="${path_original_file#$starting_dir/}"
+        relative_path="${file#$starting_dir/}"
         path_backup_file="$path_diretoria_destino/$relative_path"
         
         backup_dir=$(dirname "$path_backup_file")
@@ -42,8 +41,7 @@ function iterador_diretoria_c(){
     path_diretoria_destino="$2"
 
     for file in "$diretoria_atual"/*; do
-        path_original_file="$file"
-        relative_path="${path_original_file#$starting_dir/}"
+        relative_path="${file#$starting_dir/}"
         path_backup_file="$path_diretoria_destino/$relative_path"
         
         backup_dir=$(dirname "$path_backup_file")
@@ -75,31 +73,40 @@ function main(){
 
     path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
 
-    if $check_flag; then
+     if $check_flag_c; then
+        echo "-c enabled."
         iterador_diretoria_c "$starting_dir" "$path_diretoria_destino"
-    else 
-        if [ ! -e "$path_diretoria_destino" ]; then
-            echo "$path_diretoria_destino does not exist."
-            mkdir -p "$path_diretoria_destino"
-            echo "$path_diretoria_destino has been created"
-            iterador_diretoria "$starting_dir" "$path_diretoria_destino"
-        else
-            echo "$path_diretoria_destino already exists."
-            ./Iterador_Backup.sh "$starting_dir" "$path_diretoria_destino"
-        fi
     fi
 
-  
-    
+    if $check_flag_b; then
+        echo "-b enabled."
+    fi
+
+    if ! $check_flag_c; then
+        echo "No flags were provided. Proceeding with normal backup."
+        if [ ! -e "$path_diretoria_destino" ]; then
+            echo "$path_diretoria_destino does not exist. Creating it."
+            mkdir -p "$path_diretoria_destino"
+        fi
+        iterador_diretoria "$starting_dir" "$path_diretoria_destino"
+    fi
 
 }
 
-check_flag=false
+ccheck_flag_c=false
+file_txt=""
 
-while getopts ":c" opt; do
+while getopts ":cb" opt; do
     case $opt in
         c)
-            check_flag=true
+            check_flag_c=true
+            ;;
+        b)
+            file_txt="$OPTARG"
+            if [ ! -f "$file_txt" ]; then
+                echo "Error: Backup file '$file_txt' not found."
+                exit 1
+            fi
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
