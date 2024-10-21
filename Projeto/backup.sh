@@ -35,7 +35,7 @@ function is_excluded() {
     return 1
 }
 
-function iterador_diretoria(){
+function backup_gen(){
     diretoria_atual="$1"
     path_diretoria_destino="$2"
 
@@ -59,12 +59,12 @@ function iterador_diretoria(){
             echo "Copied file: $file to $path_backup_file"
         elif [ -d "$file" ]; then
             echo "Entering directory: $file"
-            iterador_diretoria "$file" "$path_diretoria_destino"
+            backup_gen "$file" "$path_diretoria_destino"
         fi
     done
 }
 
-function iterador_diretoria_c(){
+function backup_gen_c(){
     diretoria_atual="$1"
     path_diretoria_destino="$2"
 
@@ -86,7 +86,7 @@ function iterador_diretoria_c(){
         if [ -f "$file" ]; then
             echo "cp -a" "$file" "$path_backup_file"
         elif [ -d "$file" ]; then
-            iterador_diretoria_c "$file" "$path_diretoria_destino"
+            backup_gen_c "$file" "$path_diretoria_destino"
         fi
     done
 }
@@ -113,7 +113,7 @@ function main(){
 
     if $check_flag_c; then
         echo "-c enabled."
-        iterador_diretoria_c "$starting_dir" "$path_diretoria_destino"
+        backup_gen_c "$starting_dir" "$path_diretoria_destino"
     fi
 
 
@@ -122,12 +122,13 @@ function main(){
             echo "$path_diretoria_destino does not exist. Creating it."
             mkdir -p "$path_diretoria_destino"
         fi
-        iterador_diretoria "$starting_dir" "$path_diretoria_destino"
+        backup_gen "$starting_dir" "$path_diretoria_destino"
     fi
 }
 
 check_flag_c=false
 check_flag_b=false
+check_flag_r=false
 file_txt=""
 
 while getopts ":cb:" opt; do
@@ -145,6 +146,10 @@ while getopts ":cb:" opt; do
             if [[ "$file_txt" != /* ]]; then
                 file_txt=$(realpath "$file_txt")
             fi
+            ;;
+        r)
+            check_flag_r=true
+            expression="$OPTARG"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
