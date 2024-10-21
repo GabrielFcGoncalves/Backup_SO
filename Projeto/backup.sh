@@ -51,7 +51,6 @@ function main(){
 
 }
 
-# Parse options using getopts
 check_flag=false
 
 while getopts ":c" opt; do
@@ -66,7 +65,6 @@ while getopts ":c" opt; do
     esac
 done
 
-# Shift positional parameters so $1 and $2 refer to source and destination directories
 shift $((OPTIND-1))
 
 check_dir_integ $1 $2
