@@ -1,15 +1,23 @@
 #!/bin/bash
 
-function check_dir_integ(){
-    if [ -z "$1" ] || [ ! -d "$1" ]; then
-    echo "Error: Source directory '$1' is not a valid path."
-    exit 1
-    fi
+# Function to read exclusion list from a file
+function read_exclusion_list() {
+    local exclusion_file="$1"
+    exclusion_list=()
+    while IFS= read -r line; do
+        exclusion_list+=("$line")
+    done < "$exclusion_file"
+}
 
-    if [ -z "$2" ]; then
-        echo "Error: Destination directory '$2' is not a valid path."
-        exit 1
-    fi
+# Function to check if a file or directory is in the exclusion list
+function is_excluded() {
+    local path="$1"
+    for excluded in "${exclusion_list[@]}"; do
+        if [[ "$path" == "$excluded" ]]; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 function iterador_diretoria(){
@@ -21,6 +29,11 @@ function iterador_diretoria(){
         path_backup_file="$path_diretoria_destino/$relative_path"
         
         backup_dir=$(dirname "$path_backup_file")
+
+        if is_excluded "$file"; then
+            echo "Skipping excluded file or directory: $file"
+            continue
+        fi
 
         if [ ! -e "$backup_dir" ]; then
             mkdir -p "$backup_dir"
@@ -45,6 +58,11 @@ function iterador_diretoria_c(){
         path_backup_file="$path_diretoria_destino/$relative_path"
         
         backup_dir=$(dirname "$path_backup_file")
+
+        if is_excluded "$file"; then
+            echo "Skipping excluded file or directory: $file"
+            continue
+        fi
 
         if [ ! -e "$backup_dir" ]; then
             echo "mkdir -p" "$backup_dir"
@@ -72,15 +90,17 @@ function main(){
     fi
 
     path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
+    
+    if $check_flag_b; then
+        echo "-b enabled with file $file_txt."
+        read_exclusion_list "$file_txt"
+    fi
 
     if $check_flag_c; then
         echo "-c enabled."
         iterador_diretoria_c "$starting_dir" "$path_diretoria_destino"
     fi
 
-    if $check_flag_b; then
-        echo "-b enabled with file $file_txt."
-    fi
 
     if ! $check_flag_c; then
         echo "No flags were provided. Proceeding with normal backup."
@@ -108,10 +128,6 @@ while getopts ":cb:" opt; do
                 echo "Error: Backup file '$file_txt' not found."
                 exit 1
             fi
-            if [[ "$file_txt" != /* ]]; then
-                file_txt=$(realpath "$file_txt")
-            fi
-
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
