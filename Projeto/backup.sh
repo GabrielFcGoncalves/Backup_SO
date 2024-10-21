@@ -73,13 +73,13 @@ function main(){
 
     path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
 
-     if $check_flag_c; then
+    if $check_flag_c; then
         echo "-c enabled."
         iterador_diretoria_c "$starting_dir" "$path_diretoria_destino"
     fi
 
     if $check_flag_b; then
-        echo "-b enabled."
+        echo "-b enabled with file $file_txt."
     fi
 
     if ! $check_flag_c; then
@@ -90,23 +90,28 @@ function main(){
         fi
         iterador_diretoria "$starting_dir" "$path_diretoria_destino"
     fi
-
 }
 
-ccheck_flag_c=false
+check_flag_c=false
+check_flag_b=false
 file_txt=""
 
-while getopts ":cb" opt; do
+while getopts ":cb:" opt; do
     case $opt in
         c)
             check_flag_c=true
             ;;
         b)
+            check_flag_b=true
             file_txt="$OPTARG"
             if [ ! -f "$file_txt" ]; then
                 echo "Error: Backup file '$file_txt' not found."
                 exit 1
             fi
+            if [[ "$file_txt" != /* ]]; then
+                file_txt=$(realpath "$file_txt")
+            fi
+
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -117,4 +122,9 @@ done
 
 shift $((OPTIND-1))
 
-main $1 $2
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 [-c] [-b backup_file] source_path dest_path"
+    exit 1
+fi
+
+main "$1" "$2"
