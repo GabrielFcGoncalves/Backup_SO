@@ -5,7 +5,7 @@ function check_dir_integ(){
     exit 1
     fi
 
-    if [ -z "$2" ]; then
+    if [ -z "$2" ] || [ ! -d "$1" ]; then
         echo "Error: Destination directory '$2' is not a valid path."
         exit 1
     fi
@@ -77,8 +77,12 @@ function main(){
     if [[ "$starting_dir" != /* ]]; then
         starting_dir=$(realpath "$1")
     fi
+    end_dir=$2
+    if [[ "$end_dir" != /* ]]; then
+        end_dir=$(realpath "$2")
+    fi
 
-    path_diretoria_destino="$2/$(basename "$1")_backup"
+    path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
 
     if $check_flag; then
         if [ ! -e "$path_diretoria_destino" ]; then
