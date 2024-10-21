@@ -1,10 +1,25 @@
 #!/bin/bash
 
+function check_dir_integ(){
+    if [ -z "$1" ] || [ ! -d "$1" ]; then
+    echo "Error: Source directory '$1' is not a valid path."
+    exit 1
+    fi
+
+    if [ -z "$2" ] || [ ! -d "$1" ]; then
+        echo "Error: Destination directory '$2' is not a valid path."
+        exit 1
+    fi
+}
+
 # Function to read exclusion list from a file
 function read_exclusion_list() {
     local exclusion_file="$1"
     exclusion_list=()
     while IFS= read -r line; do
+        if [[ "$line" != /* ]]; then
+            line="$starting_dir/$line"
+        fi
         exclusion_list+=("$line")
     done < "$exclusion_file"
 }
@@ -103,7 +118,6 @@ function main(){
 
 
     if ! $check_flag_c; then
-        echo "No flags were provided. Proceeding with normal backup."
         if [ ! -e "$path_diretoria_destino" ]; then
             echo "$path_diretoria_destino does not exist. Creating it."
             mkdir -p "$path_diretoria_destino"
@@ -127,6 +141,9 @@ while getopts ":cb:" opt; do
             if [ ! -f "$file_txt" ]; then
                 echo "Error: Backup file '$file_txt' not found."
                 exit 1
+            fi
+            if [[ "$file_txt" != /* ]]; then
+                file_txt=$(realpath "$file_txt")
             fi
             ;;
         \?)
