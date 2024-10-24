@@ -6,7 +6,7 @@ function check_dir_integ(){
     exit 1
     fi
 
-    if [ -z "$2" ] || [ ! -d "$1" ]; then
+    if [ -z "$2" ] || [ ! -d "$2" ]; then
         echo "Error: Destination directory '$2' is not a valid path."
         exit 1
     fi

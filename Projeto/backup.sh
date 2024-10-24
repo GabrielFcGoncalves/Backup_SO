@@ -6,13 +6,12 @@ function check_dir_integ(){
     exit 1
     fi
 
-    if [ -z "$2" ] || [ ! -d "$1" ]; then
+    if [ -z "$2" ] || [ ! -d "$2" ]; then
         echo "Error: Destination directory '$2' is not a valid path."
         exit 1
     fi
 }
 
-# Function to read exclusion list from a file
 function read_exclusion_list() {
     local exclusion_file="$1"
     exclusion_list=()
@@ -24,7 +23,6 @@ function read_exclusion_list() {
     done < "$exclusion_file"
 }
 
-# Function to check if a file or directory is in the exclusion list
 function is_excluded() {
     local path="$1"
     for excluded in "${exclusion_list[@]}"; do
@@ -55,8 +53,16 @@ function backup_gen(){
         fi
 
         if [ -f "$file" ]; then
+            if $check_flag_r; then
+                if [[ ! "$file" =~ $expression ]]; then
+                    echo "Skipping $file: doesnt match the provided expression. "
+                    continue
+                fi
+            fi
+
             cp -a "$file" "$path_backup_file"
             echo "Copied file: $file to $path_backup_file"
+
         elif [ -d "$file" ]; then
             echo "Entering directory: $file"
             backup_gen "$file" "$path_diretoria_destino"
@@ -84,7 +90,15 @@ function backup_gen_c(){
         fi
 
         if [ -f "$file" ]; then
+            if $check_flag_r; then
+                if [[ ! "$file" =~ $expression ]]; then
+                    echo "Skipping $file: doesnt match the provided expression. "
+                    continue
+                fi
+            fi
+            
             echo "cp -a" "$file" "$path_backup_file"
+
         elif [ -d "$file" ]; then
             backup_gen_c "$file" "$path_diretoria_destino"
         fi
@@ -130,8 +144,9 @@ check_flag_c=false
 check_flag_b=false
 check_flag_r=false
 file_txt=""
+expresion=""
 
-while getopts ":cb:" opt; do
+while getopts "cb:r:" opt; do
     case $opt in
         c)
             check_flag_c=true
@@ -150,6 +165,7 @@ while getopts ":cb:" opt; do
         r)
             check_flag_r=true
             expression="$OPTARG"
+            echo "-r enabled with expression $expression"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -161,7 +177,7 @@ done
 shift $((OPTIND-1))
 
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 [-c] [-b backup_file] source_path dest_path"
+    echo "Usage: $0 [-c] [-b backup_file] [-r expresion] source_path dest_path"
     exit 1
 fi
 
