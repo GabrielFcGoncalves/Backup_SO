@@ -53,7 +53,7 @@ function backup_gen(){
         fi
 
         if [ -f "$file" ]; then
-            if $check_flag_r; then
+            if $flag_r; then
                 if [[ ! "$file" =~ $expression ]]; then
                     echo "Skipping $file: doesnt match the provided expression. "
                     continue
@@ -90,9 +90,9 @@ function backup_gen_c(){
         fi
 
         if [ -f "$file" ]; then
-            if $check_flag_r; then
-                if [[ ! "$file" =~ $expression ]]; then
-                    echo "Skipping $file: doesnt match the provided expression. "
+            if $flag_r; then
+                if [[ ! "$relative_path" =~ $expression ]]; then
+                    echo "Skipping $relative_path: doesnt match the provided expression. "
                     continue
                 fi
             fi
@@ -120,18 +120,18 @@ function main(){
 
     path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
     
-    if $check_flag_b; then
+    if $flag_b; then
         echo "-b enabled with file $file_txt."
         read_exclusion_list "$file_txt"
     fi
 
-    if $check_flag_c; then
+    if $flag_c; then
         echo "-c enabled."
         backup_gen_c "$starting_dir" "$path_diretoria_destino"
     fi
 
 
-    if ! $check_flag_c; then
+    if ! $flag_c; then
         if [ ! -e "$path_diretoria_destino" ]; then
             echo "$path_diretoria_destino does not exist. Creating it."
             mkdir -p "$path_diretoria_destino"
@@ -140,19 +140,19 @@ function main(){
     fi
 }
 
-check_flag_c=false
-check_flag_b=false
-check_flag_r=false
+flag_c=false
+flag_b=false
+flag_r=false
 file_txt=""
 expresion=""
 
 while getopts "cb:r:" opt; do
     case $opt in
         c)
-            check_flag_c=true
+            flag_c=true
             ;;
         b)
-            check_flag_b=true
+            flag_b=true
             file_txt="$OPTARG"
             if [ ! -f "$file_txt" ]; then
                 echo "Error: Backup file '$file_txt' not found."
@@ -163,7 +163,7 @@ while getopts "cb:r:" opt; do
             fi
             ;;
         r)
-            check_flag_r=true
+            flag_r=true
             expression="$OPTARG"
             echo "-r enabled with expression $expression"
             ;;
