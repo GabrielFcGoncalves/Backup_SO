@@ -1,15 +1,31 @@
 #!/bin/bash
-
+#antigo belito
 function check_dir_integ(){
     if [ -z "$1" ] || [ ! -d "$1" ]; then
     echo "Error: Source directory '$1' is not a valid path."
     exit 1
     fi
 
-    if [ -z "$2" ] || [ ! -d "$2" ]; then
+    if [ -z "$2" ] || [ ! -d "$1" ]; then
         echo "Error: Destination directory '$2' is not a valid path."
         exit 1
     fi
+}
+
+execute() {
+   
+   if [ "$flag_c" = "false" ];then
+        eval "${@}"
+        status="$?"
+        if [ $status != '0' ];then
+            ((error_count = error_count + 1))
+        fi
+
+        echo "Command executed successfully: ${@}"
+    else
+        echo "${@}"
+    fi
+
 }
 
 function read_exclusion_list() {
@@ -36,77 +52,111 @@ function is_excluded() {
 function backup_gen(){
     diretoria_atual="$1"
     path_diretoria_destino="$2"
+    mode="$3"
 
     for file in "$diretoria_atual"/*; do
-        relative_path="${file#$starting_dir/}"
-        path_backup_file="$path_diretoria_destino/$relative_path"
         
-        backup_dir=$(dirname "$path_backup_file")
+        case $mode in 
+            0)
+                relative_path="${file#$starting_dir/}"
+                path_backup_file="$path_diretoria_destino/$relative_path"
+                
+                backup_dir=$(dirname "$path_backup_file")
 
-        if is_excluded "$file"; then
-            echo "Skipping excluded file or directory: $file"
-            continue
-        fi
-
-        if [ ! -e "$backup_dir" ]; then
-            mkdir -p "$backup_dir"
-        fi
-
-        if [ -f "$file" ]; then
-            if $flag_r; then
-                if [[ ! "$file" =~ $expression ]]; then
-                    echo "Skipping $file: doesnt match the provided expression. "
+                if is_excluded "$file"; then
+                    echo "Skipping excluded file or directory: $file"
                     continue
                 fi
-            fi
 
-            cp -a "$file" "$path_backup_file"
-            echo "Copied file: $file to $path_backup_file"
-
-        elif [ -d "$file" ]; then
-            echo "Entering directory: $file"
-            backup_gen "$file" "$path_diretoria_destino"
-        fi
-    done
-}
-
-function backup_gen_c(){
-    diretoria_atual="$1"
-    path_diretoria_destino="$2"
-
-    for file in "$diretoria_atual"/*; do
-        relative_path="${file#$starting_dir/}"
-        path_backup_file="$path_diretoria_destino/$relative_path"
-        
-        backup_dir=$(dirname "$path_backup_file")
-
-        if is_excluded "$file"; then
-            echo "Skipping excluded file or directory: $file"
-            continue
-        fi
-
-        if [ ! -e "$backup_dir" ]; then
-            echo "mkdir -p" "$backup_dir"
-        fi
-
-        if [ -f "$file" ]; then
-            if $flag_r; then
-                if [[ ! "$relative_path" =~ $expression ]]; then
-                    echo "Skipping $relative_path: doesnt match the provided expression. "
-                    continue
+                if [ ! -e "$backup_dir" ]; then
+                    execute mkdir -p "$backup_dir"
                 fi
-            fi
+
+                if [ -f "$file" ]; then
+                    if $flag_r; then
+                        if [[ ! "$file" =~ $expression ]]; then
+                            echo "Skipping $file: doesnt match the provided expression. "
+                            continue
+                        fi
+                    fi
+                    if [ ! -e "$path_backup_file" ]; then 
+                        (( copiados_count = copiados_count + 1 ))
+                        execute cp -a "$file" "$path_backup_file"
+                    fi    
+
+                elif [ -d "$file" ]; then
+
+                    echo "While backing $diretoria_atual $error_count warnings were detected and $copiados_count files were copied"
+                    error_count=0;
+                    copiados_count=0
+                    echo "Entering directory: $file"
+                    backup_gen "$file" "$path_diretoria_destino" "$mode"
+                fi
+                ;;
             
-            echo "cp -a" "$file" "$path_backup_file"
+            1)
+                relative_path="${file#$end_dir/$dir_backup}"
+                path_original_path="$path_diretoria_destino$relative_path"
 
-        elif [ -d "$file" ]; then
-            backup_gen_c "$file" "$path_diretoria_destino"
-        fi
+                if is_excluded "$path_original_path"; then
+                    echo "Removing $file from the backup as it is in the provided exclusion file."
+                    if [ -f $file ]; then
+                        execute rm $file
+                    else 
+                        execute rm -r $file
+                    fi
+                    continue
+                fi
+
+                if [ -f "$file" ]; then
+
+                    if $flag_r; then
+                        if [[ ! "$file" =~ $expression ]]; then
+                            echo "Deleting $file: doesnt match the provided expression. "
+                            execute rm $file
+                            continue
+                        fi
+                    fi
+
+                    if [ ! -e $path_original_path ]; then
+                        (( error_count = error_count + 1 ))
+                        execute rm $file;
+                    else
+                        md5_source=$(md5sum "$file" | awk '{ print $1 }')
+                        md5_backup=$(md5sum "$path_original_path" | awk '{ print $1 }')
+
+                        if [ "$md5_source" != "$md5_backup" ]; then
+                            echo "File $(basename $file) has been updated."                        
+                            execute "cp -a" "$path_original_path" "$file"
+                        fi
+                    fi
+
+                elif [ -d "$file" ]; then
+                    if [ ! -e "$path_original_path" ]; then
+                        echo "Dir $path_original_path has been deleted. Skipping."
+                        execute rm -r $file
+                        continue
+                    else
+                        #echo "Entering directory: $file"
+                        echo "While backing $diretoria_atual $error_count warnings were detected"
+                        error_count=0;
+                        backup_gen "$file" "$path_diretoria_destino" "$mode"
+                    fi
+                fi
+
+                ;;
+                
+
+        esac
     done
 }
 
 function main(){
     check_dir_integ $1 $2
+
+    copiados_count=0
+    error_count=0
+
 
     starting_dir=$1
     if [[ "$starting_dir" != /* ]]; then
@@ -118,35 +168,30 @@ function main(){
         end_dir=$(realpath "$2")
     fi
 
-    path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
-    
+    dir_backup="$(basename "$starting_dir")_backup"
+
+    path_diretoria_destino="$end_dir/${dir_backup}"    
+
     if $flag_b; then
         echo "-b enabled with file $file_txt."
         read_exclusion_list "$file_txt"
     fi
 
-    if $flag_c; then
-        echo "-c enabled."
-        backup_gen_c "$starting_dir" "$path_diretoria_destino"
+    if [ ! -e "$path_diretoria_destino" ]; then
+        echo "$path_diretoria_destino does not exist. Creating it."
+        execute mkdir -p "$path_diretoria_destino"
     fi
-
-
-    if ! $flag_c; then
-        if [ ! -e "$path_diretoria_destino" ]; then
-            echo "$path_diretoria_destino does not exist. Creating it."
-            mkdir -p "$path_diretoria_destino"
-        fi
-        backup_gen "$starting_dir" "$path_diretoria_destino"
-    fi
+    backup_gen "$starting_dir" "$path_diretoria_destino" "0"
+    backup_gen  "$path_diretoria_destino" "$starting_dir" "1"
 }
 
 flag_c=false
 flag_b=false
 flag_r=false
 file_txt=""
-expresion=""
+expression=""
 
-while getopts "cb:r:" opt; do
+while getopts ":cb:r:" opt; do
     case $opt in
         c)
             flag_c=true
@@ -165,7 +210,6 @@ while getopts "cb:r:" opt; do
         r)
             flag_r=true
             expression="$OPTARG"
-            echo "-r enabled with expression $expression"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -177,7 +221,7 @@ done
 shift $((OPTIND-1))
 
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 [-c] [-b backup_file] [-r expresion] source_path dest_path"
+    echo "Usage: $0 [-c] [-b backup_file] source_path dest_path"
     exit 1
 fi
 
