@@ -80,15 +80,10 @@ function backup_gen(){
                         fi
                     fi
                     if [ ! -e "$path_backup_file" ]; then 
-                        (( copiados_count = copiados_count + 1 ))
                         execute cp -a "$file" "$path_backup_file"
                     fi    
 
                 elif [ -d "$file" ]; then
-
-                    echo "While backing $diretoria_atual $error_count warnings were detected and $copiados_count files were copied"
-                    error_count=0;
-                    copiados_count=0
                     echo "Entering directory: $file"
                     backup_gen "$file" "$path_diretoria_destino" "$mode"
                 fi
@@ -153,10 +148,6 @@ function backup_gen(){
 
 function main(){
     check_dir_integ $1 $2
-
-    copiados_count=0
-    error_count=0
-
 
     starting_dir=$1
     if [[ "$starting_dir" != /* ]]; then
