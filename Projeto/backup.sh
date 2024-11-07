@@ -21,7 +21,7 @@ execute() {
             ((error_count = error_count + 1))
         fi
 
-        echo "Command executed successfully: ${@}"
+        echo "${@}"
     else
         echo "${@}"
     fi
@@ -160,7 +160,7 @@ function main(){
 
     starting_dir=$1
     if [[ "$starting_dir" != /* ]]; then
-        starting_dir=$(realpath "$1")
+        starting_dir=$(readlink -f "$1")
     fi
 
     end_dir=$2
