@@ -6,37 +6,25 @@ function check_dir_integ(){
     exit 1
     fi
 
-    if [ -z "$2" ] || [ ! -d "$1" ]; then
+    if [ -z "$2" ] || [ ! -d "$2" ]; then
         echo "Error: Destination directory '$2' is not a valid path."
         exit 1
     fi
 }
 
 execute() {
-   
+
     if [ "$flag_c" = "false" ];then
-        eval "${@}"
-        status="$?"
-        if [ $status != '0' ];then
-            ((errors = errors + 1))
-            ((copied = copied -1))
-            return
-        fi
-
-        echo "${@}"
-    else
-        echo "${@}"
+        eval "${@}" || {((errors++)); ((copied--));return;}
     fi
-
+    echo "${@}"
 }
 
 function read_exclusion_list() {
     local exclusion_file="$1"
     exclusion_list=()
     while IFS= read -r line; do
-        if [[ "$line" != /* ]]; then
-            line="$starting_dir/$line"
-        fi
+        [[ "$line" != /* ]] && line="$starting_dir/$line"
         exclusion_list+=("$line")
     done < "$exclusion_file"
 }
@@ -44,9 +32,7 @@ function read_exclusion_list() {
 function is_excluded() {
     local path="$1"
     for excluded in "${exclusion_list[@]}"; do
-        if [[ "$path" == "$excluded" ]]; then
-            return 0
-        fi
+        [[ "$path" == "$excluded" ]] && return 0
     done
     return 1
 }
@@ -67,9 +53,9 @@ function backup_gen(){
 
         relative_path_end="${file#$end_dir/$dir_backup}"
         path_original_path="$diretoria_atual$relative_path_end"
-        
-        backup_dir=$(dirname "$path_backup_file")
 
+        backup_dir=$(dirname "$path_backup_file")
+        
         if [ ! -e $path_backup_file ]; then
 
             if is_excluded "$file"; then
@@ -77,20 +63,15 @@ function backup_gen(){
                 continue
             fi
 
-            if [ ! -e "$backup_dir" ]; then
-                execute mkdir -p "$backup_dir"
-            fi
-
+            [ ! -e "$backup_dir" ] && execute mkdir -p "$backup_dir"
+            
             if [ -f "$file" ]; then
-                if $flag_r; then
-                    if [[ ! "$file" =~ $expression ]]; then
-                        echo "Skipping $file: doesnt match the provided expression. "
-                        continue
-                    fi
-                fi
-                if [ ! -e "$path_backup_file" ]; then 
+                if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
+                    echo "Skipping $file: doesnt match the provided expression. "
+                    continue
+                elif [ ! -e "$path_backup_file" ]; then 
                     execute cp -a "$file" "$path_backup_file"
-                    ((copied = copied+1)) 
+                    ((copied++)) 
                 fi    
 
             elif [ -d "$file" ]; then
@@ -112,14 +93,12 @@ function backup_gen(){
 
             if [ -f "$path_backup_file" ]; then
 
-                if $flag_r; then
-                    if [[ ! "$path_backup_file" =~ $expression ]]; then
-                        echo "Deleting $path_backup_file: doesnt match the provided expression. "
-                        execute rm $path_backup_file
-                        continue
-                    fi
+                if [[ ! "$path_backup_file" =~ $expression ]] && [[ $flag_r ]]; then
+                    echo "Deleting $path_backup_file: doesnt match the provided expression. "
+                    execute rm $path_backup_file
+                    continue
                 fi
-
+            
                 if [ ! -e $file ]; then
                     (( errors = errors + 1 ))
                     execute rm $path_backup_file;
@@ -130,7 +109,7 @@ function backup_gen(){
                     if [ "$md5_source" != "$md5_backup" ]; then
                         echo "File $(basename $path_backup_file) has been updated."                        
                         execute "cp -a" "$file" "$path_backup_file"
-                        ((updated = updated+1)) 
+                        ((updated++)) 
                     fi
                 fi
 
@@ -139,9 +118,8 @@ function backup_gen(){
                     echo "Dir $file has been deleted. Skipping."
                     execute rm -r $path_backup_file
                     continue
-                else
-                    backup_gen "$file" "$path_diretoria_destino" 
                 fi
+                backup_gen "$file" "$path_diretoria_destino" 
             fi
         fi
     done
@@ -153,14 +131,11 @@ function main(){
     check_dir_integ $1 $2
 
     starting_dir=$1
-    if [[ "$starting_dir" != /* ]]; then
-        starting_dir=$(readlink -f "$1")
-    fi
+    [[ "$starting_dir" != /* ]] && starting_dir=$(readlink -f "$1")
+
 
     end_dir=$2
-    if [[ "$end_dir" != /* ]]; then
-        end_dir=$(realpath "$2")
-    fi
+    [[ "$end_dir" != /* ]] && end_dir=$(realpath "$2")
 
     dir_backup="$(basename "$starting_dir")_backup"
 
@@ -196,9 +171,7 @@ while getopts ":cb:r:" opt; do
                 echo "Error: Backup file '$file_txt' not found."
                 exit 1
             fi
-            if [[ "$file_txt" != /* ]]; then
-                file_txt=$(realpath "$file_txt")
-            fi
+            [[ "$file_txt" != /* ]] && file_txt=$(realpath "$file_txt")
             ;;
         r)
             flag_r=true
