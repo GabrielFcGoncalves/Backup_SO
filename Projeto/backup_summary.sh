@@ -52,7 +52,7 @@ function backup_gen(){
         path_backup_file="$path_diretoria_destino/$relative_path_start"
 
         relative_path_end="${file#$end_dir/$dir_backup}"
-        path_original_path="$diretoria_atual$relative_path_end"
+
 
         backup_dir=$(dirname "$path_backup_file")
         
@@ -100,17 +100,11 @@ function backup_gen(){
                 fi
             
                 if [ ! -e $file ]; then
-                    (( errors = errors + 1 ))
+                    (( errors++))
                     execute rm $path_backup_file;
-                else
-                    md5_source=$(md5sum "$path_backup_file" | awk '{ print $1 }')
-                    md5_backup=$(md5sum "$file" | awk '{ print $1 }')
-
-                    if [ "$md5_source" != "$md5_backup" ]; then
-                        echo "File $(basename $path_backup_file) has been updated."                        
+                elif [ $path_backup_file -ot $file ];then                    
                         execute "cp -a" "$file" "$path_backup_file"
                         ((updated++)) 
-                    fi
                 fi
 
             elif [ -d "$file" ]; then
@@ -125,6 +119,7 @@ function backup_gen(){
     done
 
     echo "While backing $diretoria_atual: $errors warnings, $copied copied, $updated updated."
+    echo -e "\n"
 }
 
 function main(){

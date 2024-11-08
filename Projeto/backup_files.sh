@@ -17,22 +17,16 @@ function Backup_files(){
 
     for file in "$diretoria_atual"/*; do
 
-        
         if [ -f "$file" ]; then
             if [ ! -e "$path_diretoria_destino/$(basename $file)" ]; then
                 echo "cp -a" "$file" "$path_diretoria_destino"
                 cp -a "$file" "$path_diretoria_destino"
 
-            else
-
-                md5_source=$(md5sum "$file" | awk '{ print $1 }')
-                md5_backup=$(md5sum "$path_diretoria_destino/$(basename $file)" | awk '{ print $1 }')
-
-                if [ "$md5_source" != "$md5_backup" ]; then
-                        echo "File $(basename $file) has been updated. Backing up now."
-                        echo "cp -a" "$file" "$path_diretoria_destino"
-                        cp -a "$file" "$path_diretoria_destino"
-                fi
+            elif [ $path_diretoria_destino -ot $file ]   
+                echo "File $(basename $file) has been updated. Backing up now."
+                echo "cp -a" "$file" "$path_diretoria_destino"
+                cp -a "$file" "$path_diretoria_destino"
+                
             fi
         fi
 
@@ -51,15 +45,11 @@ function Backup_files_c(){
             if [ ! -e "$path_diretoria_destino/$(basename $file)" ]; then
                 echo "cp -a" "$file" "$path_diretoria_destino"
 
-            else
-
-                md5_source=$(md5sum "$file" | awk '{ print $1 }')
-                md5_backup=$(md5sum "$path_diretoria_destino/$(basename $file)" | awk '{ print $1 }')
-
-                if [ "$md5_source" != "$md5_backup" ]; then
-                        echo "File $(basename $file) has been updated."                        
-                        echo "cp -a" "$file" "$path_diretoria_destino"
-                fi
+           elif [ $path_diretoria_destino -ot $file ];then   
+                echo "File $(basename $file) has been updated. Backing up now."
+                echo "cp -a" "$file" "$path_diretoria_destino"
+                cp -a "$file" "$path_diretoria_destino"
+                
             fi
         fi
 
