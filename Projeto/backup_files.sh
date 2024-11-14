@@ -22,11 +22,10 @@ function Backup_files(){
                 echo "cp -a" "$file" "$path_diretoria_destino"
                 cp -a "$file" "$path_diretoria_destino"
 
-            elif [ $path_diretoria_destino -ot $file ]   
+            elif [ "$path_diretoria_destino" -ot "$file" ]; then
                 echo "File $(basename $file) has been updated. Backing up now."
                 echo "cp -a" "$file" "$path_diretoria_destino"
-                cp -a "$file" "$path_diretoria_destino"
-                
+                cp -a "$file" "$path_diretoria_destino"  
             fi
         fi
 
@@ -83,12 +82,10 @@ function main(){
 
     else
         if [ ! -e "$path_diretoria_destino" ]; then
-            echo "$path_diretoria_destino does not exist."
             mkdir "$path_diretoria_destino"
+            echo "mkdir" "$path_diretoria_destino"
             Backup_files "$starting_dir" "$path_diretoria_destino"
-            echo "$path_diretoria_destino has been created"
         else
-            echo "$path_diretoria_destino already exists."
             Backup_files "$starting_dir" "$path_diretoria_destino"
         fi
     fi
