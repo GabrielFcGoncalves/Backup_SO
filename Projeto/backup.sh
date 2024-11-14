@@ -130,10 +130,6 @@ function main(){
         read_exclusion_list "$file_txt"
     fi
 
-    if [ ! -e "$path_diretoria_destino" ]; then
-        echo "$path_diretoria_destino does not exist. Creating it."
-        execute mkdir -p "$path_diretoria_destino"
-    fi
     backup_gen "$starting_dir" "$path_diretoria_destino" 
 }
 
