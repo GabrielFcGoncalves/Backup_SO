@@ -45,9 +45,9 @@ function backup_gen(){
 
         relative_path_start="${file#$starting_dir/}"
         path_backup_file="$path_diretoria_destino/$relative_path_start"
-        relative_path_end="${file#$end_dir/$dir_backup}"
-        backup_dir=$(dirname "$path_backup_file") 
 
+        backup_dir=$(dirname "$path_backup_file")
+        
         if [ ! -e $path_backup_file ]; then
 
             if is_excluded "$file"; then
@@ -66,41 +66,23 @@ function backup_gen(){
                 fi    
 
             elif [ -d "$file" ]; then
-                echo -e "\n"
                 backup_gen "$file" "$path_diretoria_destino" 
-            fi           
+            fi
             
         
         else
-
-            if is_excluded "$file"; then
-                echo "Removing $path_backup_file from the backup as it is in the provided exclusion path_backup_file."
-                if [ -f $path_backup_file ]; then
-                    execute rm $path_backup_file
-                else 
-                    execute rm -r $path_backup_file
-                fi
-                continue
-            fi
-
+        
             if [ -f "$path_backup_file" ]; then
-
-                if [[ ! "$path_backup_file" =~ $expression ]] && [[ $flag_r ]]; then
-                    echo "Deleting $path_backup_file: doesnt match the provided expression. "
-                    execute rm $path_backup_file
-                    continue
-                fi
             
                 if [ ! -e $file ]; then
                     execute rm $path_backup_file;
                 elif [ $path_backup_file -ot $file ];then                    
                         execute "cp -a" "$file" "$path_backup_file"
-                        ((updated++)) 
                 fi
 
             elif [ -d "$file" ]; then
                 if [ ! -e "$file" ]; then
-                    echo "Dir $file has been deleted. Skipping."
+                    echo "Dir $file has been deleted. Deleting."
                     execute rm -r $path_backup_file
                     continue
                 fi
@@ -126,7 +108,6 @@ function main(){
     path_diretoria_destino="$end_dir/${dir_backup}"    
 
     if $flag_b; then
-        echo "-b enabled with file $file_txt."
         read_exclusion_list "$file_txt"
     fi
 
