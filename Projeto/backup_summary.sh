@@ -15,8 +15,9 @@ function check_dir_integ(){
 execute() {
 
     if [ "$flag_c" = "false" ];then
-        eval "${@}" || {((errors++)); ((copied--));return;}
+        eval "${@}" || {((errors++));return 1;}
     fi
+
     echo "${@}"
 }
 
@@ -51,8 +52,6 @@ function backup_gen(){
         relative_path_start="${file#$starting_dir/}"
         path_backup_file="$path_diretoria_destino/$relative_path_start"
 
-        relative_path_end="${file#$end_dir/$dir_backup}"
-
 
         backup_dir=$(dirname "$path_backup_file")
         
@@ -71,12 +70,12 @@ function backup_gen(){
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
                     execute cp -a "$file" "$path_backup_file"
-                    ((copied++)) 
+                    [ $? -eq 0 ] && ((copied++)) 
                 fi    
 
             elif [ -d "$file" ]; then
                 backup_gen "$file" "$path_diretoria_destino" 
-            fi           
+            fi
             
         
         else
