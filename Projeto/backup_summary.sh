@@ -24,8 +24,7 @@ execute() {
 function read_exclusion_list() {
     local exclusion_file="$1"
     exclusion_list=()
-    while IFS= read -r line; do
-        [[ "$line" != /* ]] && line="$starting_dir/$line"
+    while IFS= read -r line; do 
         exclusion_list+=("$line")
     done < "$exclusion_file"
 }
@@ -33,6 +32,7 @@ function read_exclusion_list() {
 function is_excluded() {
     local path="$1"
     for excluded in "${exclusion_list[@]}"; do
+        excluded="$2/$(basename "$excluded")" && [[ "$excluded" != /* ]] 
         [[ "$path" == "$excluded" ]] && return 0
     done
     return 1
@@ -56,7 +56,7 @@ function backup_gen(){
         
         if [ ! -e $path_backup_file ]; then
 
-            if is_excluded "$file"; then
+            if is_excluded "$file" "$diretoria_atual"; then
                 echo "Skipping excluded file or directory: $file"
                 continue
             fi
