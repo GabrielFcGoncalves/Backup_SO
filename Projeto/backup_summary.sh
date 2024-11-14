@@ -33,7 +33,7 @@ function is_excluded() {
     local path="$1"
     for excluded in "${exclusion_list[@]}"; do
         excluded="$2/$(basename "$excluded")" && [[ "$excluded" != /* ]] 
-        [[ "$path" == "$excluded" ]] && return 0
+        [[ "$path" == "$excluded" || "$path" == "$excluded/"* ]] && return 0
     done
     return 1
 }
