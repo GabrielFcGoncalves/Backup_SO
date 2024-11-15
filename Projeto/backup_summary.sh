@@ -57,8 +57,13 @@ function backup_gen(){
             continue
        fi
 
-        relative_path_start="${file#$starting_dir/}"
-        path_backup_file="$path_diretoria_destino/$relative_path_start"
+        path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
+        path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+        path_original_dir="$starting_dir/${diretoria_atual#$starting_dir/}"
+        if [ "$diretoria_atual" == "$starting_dir" ];then
+            path_backup_dir="$path_diretoria_destino"
+            path_original_dir="$starting_dir"
+        fi
 
         backup_dir=$(dirname "$path_backup_file")
         
@@ -88,27 +93,46 @@ function backup_gen(){
 
             if [ -f "$path_backup_file" ]; then
             
-                if [ ! -e $file ]; then
-                    (( errors++))
-                    execute rm $path_backup_file;
-                     (( deleted++))
-                elif [ $path_backup_file -ot $file ];then                    
+                if [ $path_backup_file -ot $file ];then                    
                         execute "cp -a" "$file" "$path_backup_file"
                         [ $? -eq 0 ] && ((updated++)) 
                 fi
 
             elif [ -d "$file" ]; then
-                if [ ! -e "$file" ]; then
-                    echo "Dir $file has been deleted. Deleting.."
-                    execute rm -r $path_backup_file
-                    if [ $? -eq 0 ];then 
-                        (( deleted++))
-                        size_deleted=$((size_deleted + $(stat --format="%s" "$file")))
-                    fi
-                    continue
-                fi
                 backup_gen "$file" "$path_diretoria_destino" 
             fi
+        fi
+
+        count_backup=$(ls -1 "$path_backup_dir" | wc -l)
+        count_original=$(ls -1 "$path_original_dir" | wc -l)
+
+        if [ "$count_backup" -gt "$count_original" ]; then
+            for backupfile in "$path_backup_dir"/*; do
+                filename=$(basename "$backupfile")
+                aux_cum=0
+                aux_count=0
+                if [ ! -e "$path_original_dir/$filename" ] && [ -f "$backupfile" ]; then
+                    aux_cum=$((aux_cum + $(stat --format=%s "$backupfile")))
+                    ((aux_count++))
+                    execute rm "$backupfile"
+                    if [ $? -eq 0 ];then
+                        size_deleted=$((size_deleted + aux_cum))
+                        deleted=$((deleted + aux_count))
+                    fi
+
+                elif [ ! -e "$path_original_dir/$filename" ] && [ -d "$backupfile" ]; then
+
+                    aux_cum=$(du -sb "$backupfile" | cut -f1)
+
+                    aux_count=$(find "$backupfile" -type f | wc -l)
+                
+                    execute rm -r "$backupfile"
+                    if [ $? -eq 0 ]; then
+                        size_deleted=$((size_deleted + aux_cum))
+                        deleted=$((deleted + aux_count))
+                    fi
+                fi
+            done
         fi
     done
 
@@ -119,12 +143,8 @@ function backup_gen(){
 function main(){
     check_dir_integ $1 $2
 
-    starting_dir=$1
-    [[ "$starting_dir" != /* ]] && starting_dir=$(readlink -f "$1")
-
-
-    end_dir=$2
-    [[ "$end_dir" != /* ]] && end_dir=$(realpath "$2")
+    starting_dir=$(readlink -f "$1")
+    end_dir=$(realpath "$2")
 
     dir_backup="$(basename "$starting_dir")_backup"
 
@@ -133,10 +153,9 @@ function main(){
     if $flag_b; then
         read_exclusion_list "$file_txt"
     fi
-
-    if [ ! -e "$path_diretoria_destino" ]; then
-        execute mkdir -p "$path_diretoria_destino"
-    fi
+    
+    [ ! -e "$path_diretoria_destino" ] && execute mkdir -p "$path_diretoria_destino"
+    
     backup_gen "$starting_dir" "$path_diretoria_destino" 
 }
 
