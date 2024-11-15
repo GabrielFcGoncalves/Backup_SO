@@ -44,7 +44,7 @@ function Backup_files_c(){
             if [ ! -e "$path_diretoria_destino/$(basename $file)" ]; then
                 echo "cp -a" "$file" "$path_diretoria_destino"
 
-           elif [ $path_diretoria_destino -ot $file ];then   
+           elif [ $file -nt $path_diretoria_destino ];then   
                 echo "File $(basename $file) has been updated. Backing up now."
                 echo "cp -a" "$file" "$path_diretoria_destino"
                 cp -a "$file" "$path_diretoria_destino"

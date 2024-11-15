@@ -46,8 +46,16 @@ function backup_gen(){
     local copied=0
     local updated=0
     local errors=0
+    local deleted=0
+    local size_deleted=0
+    local size_copied=0
 
     for file in "$diretoria_atual"/*; do
+
+        if is_excluded "$file" "$diretoria_atual"; then
+            echo "Skipping excluded file or directory: $file"
+            continue
+       fi
 
         relative_path_start="${file#$starting_dir/}"
         path_backup_file="$path_diretoria_destino/$relative_path_start"
@@ -56,11 +64,7 @@ function backup_gen(){
         
         if [ ! -e $path_backup_file ]; then
 
-            if is_excluded "$file" "$diretoria_atual"; then
-                echo "Skipping excluded file or directory: $file"
-                continue
-            fi
-
+           
             [ ! -e "$backup_dir" ] && execute mkdir -p "$backup_dir"
             
             if [ -f "$file" ]; then
@@ -69,7 +73,10 @@ function backup_gen(){
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
                     execute cp -a "$file" "$path_backup_file"
-                    [ $? -eq 0 ] && ((copied++)) 
+                    if [ $? -eq 0 ];then
+                        ((copied++))
+                        size_copied=$((size_copied + $(stat --format="%s" "$file")))
+                    fi 
                 fi    
 
             elif [ -d "$file" ]; then
@@ -84,6 +91,7 @@ function backup_gen(){
                 if [ ! -e $file ]; then
                     (( errors++))
                     execute rm $path_backup_file;
+                     (( deleted++))
                 elif [ $path_backup_file -ot $file ];then                    
                         execute "cp -a" "$file" "$path_backup_file"
                         [ $? -eq 0 ] && ((updated++)) 
@@ -93,6 +101,10 @@ function backup_gen(){
                 if [ ! -e "$file" ]; then
                     echo "Dir $file has been deleted. Deleting.."
                     execute rm -r $path_backup_file
+                    if [ $? -eq 0 ];then 
+                        (( deleted++))
+                        size_deleted=$((size_deleted + $(stat --format="%s" "$file")))
+                    fi
                     continue
                 fi
                 backup_gen "$file" "$path_diretoria_destino" 
@@ -100,7 +112,7 @@ function backup_gen(){
         fi
     done
 
-    echo "While backing $diretoria_atual: $errors warnings, $copied copied, $updated updated."
+    echo "While backing $diretoria_atual: $errors warnings, $updated updated, $copied copied (${size_copied}B) and $deleted deleted (${size_deleted}B)."
     echo -e "\n"
 }
 

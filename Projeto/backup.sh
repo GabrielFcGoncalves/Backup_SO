@@ -43,17 +43,17 @@ function backup_gen(){
 
     for file in "$diretoria_atual"/*; do
 
+        if is_excluded "$file"; then
+                echo "Skipping excluded file or directory: $file"
+                continue
+        fi
+
         relative_path_start="${file#$starting_dir/}"
         path_backup_file="$path_diretoria_destino/$relative_path_start"
 
         backup_dir=$(dirname "$path_backup_file")
         
         if [ ! -e $path_backup_file ]; then
-
-            if is_excluded "$file"; then
-                echo "Skipping excluded file or directory: $file"
-                continue
-            fi
 
             [ ! -e "$backup_dir" ] && execute mkdir -p "$backup_dir"
             
@@ -76,7 +76,7 @@ function backup_gen(){
             
                 if [ ! -e $file ]; then
                     execute rm $path_backup_file;
-                elif [ $path_backup_file -ot $file ];then                    
+                elif [ $file -nt $path_diretoria_destino ];then                    
                         execute "cp -a" "$file" "$path_backup_file"
                 fi
 
