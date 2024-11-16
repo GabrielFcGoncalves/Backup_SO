@@ -1,0 +1,4 @@
+While backing aaa: 0 warnings, 0 updated, 0 copied (0B) and 0 deleted (0B).
+cp -a /home/sleepyy/Backup_SO/Projeto/src/output.txt /home/sleepyy/Backup_SO/Projeto/backup_test/output.txt
+cp -a /home/sleepyy/Backup_SO/Projeto/src/start.sh /home/sleepyy/Backup_SO/Projeto/backup_test/start.sh
+While backing /home/sleepyy/Backup_SO/Projeto/src: 0 warnings, 1 updated, 1 copied (8304B) and 0 deleted (0B).

@@ -160,19 +160,13 @@ function main(){
     check_dir_integ $1 $2
 
     starting_dir=$(readlink -f "$1")
-    end_dir=$(realpath "$2")
-
-    dir_backup="$(basename "$starting_dir")_backup"
-
-    path_diretoria_destino="$end_dir/${dir_backup}"    
+    end_dir=$(realpath "$2") 
 
     if $flag_b; then
         read_exclusion_list "$file_txt"
     fi
-    
-    [ ! -e "$path_diretoria_destino" ] && mkdir -p "$path_diretoria_destino"
-    
-    backup_gen "$starting_dir" "$path_diretoria_destino" 
+        
+    backup_gen "$starting_dir" "$end_dir" 
 }
 
 flag_c=false

@@ -122,17 +122,13 @@ function main(){
 
 
     end_dir=$2
-    [[ "$end_dir" != /* ]] && end_dir=$(realpath "$2")
-
-    dir_backup="$(basename "$starting_dir")_backup"
-
-    path_diretoria_destino="$end_dir/${dir_backup}"    
+    [[ "$end_dir" != /* ]] && end_dir=$(realpath "$2")   
 
     if $flag_b; then
         read_exclusion_list "$file_txt"
     fi
 
-    backup_gen "$starting_dir" "$path_diretoria_destino" 
+    backup_gen "$starting_dir" "$end_dir" 
 }
 
 flag_c=false
