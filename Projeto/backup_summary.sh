@@ -86,7 +86,7 @@ function backup_gen(){
         if [ ! -e $path_backup_file ]; then
 
            
-            [ ! -e "$backup_dir" ] && mkdir -p "$backup_dir"
+            [ ! -e "$backup_dir" ] && execute mkdir -p "$backup_dir"
             
             if [ -f "$file" ]; then
                 if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
