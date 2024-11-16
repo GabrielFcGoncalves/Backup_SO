@@ -152,7 +152,7 @@ function backup_gen(){
 
     done
 
-    echo "While backing ${diretoria_atual#$starting_dir/}: $errors warnings, $updated updated, $copied copied (${size_copied}B) and $deleted deleted (${size_deleted}B)."
+    echo "While backuping ${diretoria_atual#$starting_dir/}: $errors warnings, $updated updated, $copied copied (${size_copied}B) and $deleted deleted (${size_deleted}B)."
     # echo -e "\n"
 }
 
@@ -162,7 +162,7 @@ function main(){
     starting_dir=$(readlink -f "$1")
     end_dir=$(realpath "$2")
 
-    dir_backup="$(basename "$starting_dir")_backup"
+    dir_backup="$(basename "$starting_dir")"
 
     path_diretoria_destino="$end_dir/${dir_backup}"    
 

@@ -1,0 +1,6 @@
+cp -a /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/src/aaa/prog2.c /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/backup_test/src/aaa/prog2.c
+While backuping aaa: 0 warnings, 0 updated, 1 copied (8282B) and 0 deleted (0B).
+cp -a /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/src/output.txt /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/backup_test/src/output.txt
+cp -a /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/src/prog1.c /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/backup_test/src/prog1.c
+cp -a /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/src/start.sh /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/backup_test/src/start.sh
+While backuping /home/belito/Documents/GitHub/Backup_SO/Projeto/test_a1/src: 0 warnings, 0 updated, 3 copied (16596B) and 0 deleted (0B).

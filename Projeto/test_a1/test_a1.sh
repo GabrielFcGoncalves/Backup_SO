@@ -3,10 +3,12 @@
 
 testName=test_a1
 
-rm -rf backup_test
+# Remove the line that deletes backup_test
+# rm -rf backup_test
+
 cp -r -a backup_$testName backup_test
 
-#test results
+# Test results
 ./backup_summary.sh src backup_test > output.txt 2> err.txt
 
 nlinesout=$(wc -l ${testName}.out | cut -d\  -f1)
@@ -15,12 +17,12 @@ nlinesout=$(wc -l ${testName}.out | cut -d\  -f1)
 echo "Output from backup_summary.sh:"
 cat output.txt
 
-#test results
-# correct in head 
+# Test results
+# Correct in head
 if cat output.txt | grep . | head -${nlinesout} | tr -s ' ' | sort | diff - ${testName}.out > /dev/null
 then
     score=$((score+60))
-# correct in tail 
+# Correct in tail
 elif cat output.txt | grep . | tail -${nlinesout} | tr -s ' ' | sort | diff - ${testName}.out > /dev/null
 then
     score=$((score+60))
@@ -49,6 +51,7 @@ fi
 echo "Error Output:"
 cat err.txt
 
-rm -rf backup_test
+# No need to remove backup_test
+# rm -rf backup_test
 
 echo "Score: $score"
