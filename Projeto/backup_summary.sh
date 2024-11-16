@@ -61,6 +61,7 @@ function backup_gen(){
     local copied=0
     local updated=0
     local errors=0
+    local warnings=0
     local deleted=0
     local size_deleted=0
     local size_copied=0
@@ -111,7 +112,7 @@ function backup_gen(){
             
                 if [ $path_backup_file -ot $file ];then                    
                         execute "cp -a" "$file" "$path_backup_file"
-                        [ $? -eq 0 ] && ((updated++)) 
+                        [ $? -eq 0 ] && ((updated++)) && ((warnings++))
                 fi
 
             elif [ -d "$file" ]; then
@@ -152,7 +153,7 @@ function backup_gen(){
 
     done
 
-    echo "While backing ${diretoria_atual#$starting_dir/}: $errors warnings, $updated updated, $copied copied (${size_copied}B) and $deleted deleted (${size_deleted}B)."
+    echo "While backuping ${diretoria_atual#$dir/}: $errors Errors; $warnings Warnings; $updated Updated; $copied Copied (${size_copied}B); $deleted Deleted (${size_deleted}B)"
     # echo -e "\n"
 }
 
@@ -169,6 +170,7 @@ function main(){
     backup_gen "$starting_dir" "$end_dir" 
 }
 
+dir=$(pwd)
 flag_c=false
 flag_b=false
 flag_r=false
