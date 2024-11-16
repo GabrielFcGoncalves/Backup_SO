@@ -2,12 +2,27 @@
 #antigo belito
 function check_dir_integ(){
     if [ -z "$1" ] || [ ! -d "$1" ]; then
-    echo "Error: Source directory '$1' is not a valid path."
-    exit 1
+        echo "Error: Source directory '$1' is not a valid path."
+        exit 1
     fi
 
     if [ -z "$2" ] || [ ! -d "$2" ]; then
         echo "Error: Destination directory '$2' is not a valid path."
+        exit 1
+    fi
+
+    if [ "$1" == "$2" ]; then
+        echo "Erro: O diretório de origem e destino não podem ser os mesmos."
+        exit 1
+    fi
+
+   if [[ ! -r "$1" ]]; then
+        echo "Erro: Sem permissão de leitura no diretório '$1'."
+        exit 1
+    fi
+
+    if [[ ! -w "$2" ]] || [[ ! -r "$2" ]]; then
+        echo "Erro: Sem permissão de escrita ou de leitura no diretório '$2'."
         exit 1
     fi
 }
@@ -55,11 +70,12 @@ function backup_gen(){
         if is_excluded "$file" "$diretoria_atual"; then
             echo "Skipping excluded file or directory: $file"
             continue
-       fi
+        fi
 
         path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
         path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
         path_original_dir="$starting_dir/${diretoria_atual#$starting_dir/}"
+
         if [ "$diretoria_atual" == "$starting_dir" ];then
             path_backup_dir="$path_diretoria_destino"
             path_original_dir="$starting_dir"
@@ -70,7 +86,7 @@ function backup_gen(){
         if [ ! -e $path_backup_file ]; then
 
            
-            [ ! -e "$backup_dir" ] && execute mkdir -p "$backup_dir"
+            [ ! -e "$backup_dir" ] && mkdir -p "$backup_dir"
             
             if [ -f "$file" ]; then
                 if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
@@ -107,37 +123,37 @@ function backup_gen(){
         count_original=$(ls -1 "$path_original_dir" | wc -l)
 
         if [ "$count_backup" -gt "$count_original" ]; then
+
             for backupfile in "$path_backup_dir"/*; do
                 filename=$(basename "$backupfile")
-                aux_cum=0
-                aux_count=0
-                if [ ! -e "$path_original_dir/$filename" ] && [ -f "$backupfile" ]; then
-                    aux_cum=$((aux_cum + $(stat --format=%s "$backupfile")))
-                    ((aux_count++))
-                    execute rm "$backupfile"
-                    if [ $? -eq 0 ];then
-                        size_deleted=$((size_deleted + aux_cum))
-                        deleted=$((deleted + aux_count))
+                
+                if [ ! -e "$path_original_dir/$filename" ]; then
+
+                    if [ -f "$backupfile" ]; then
+                        aux_cum=$(stat --format=%s "$backupfile")
+                        aux_count=1
+                        execute rm "$backupfile"
+
+                    elif [ -d "$backupfile" ]; then
+                        aux_cum=$(du -sb "$backupfile" | cut -f1)
+                        aux_count=$(find "$backupfile" -type f | wc -l)
+                        execute rm -r "$backupfile"
                     fi
 
-                elif [ ! -e "$path_original_dir/$filename" ] && [ -d "$backupfile" ]; then
-
-                    aux_cum=$(du -sb "$backupfile" | cut -f1)
-
-                    aux_count=$(find "$backupfile" -type f | wc -l)
-                
-                    execute rm -r "$backupfile"
                     if [ $? -eq 0 ]; then
                         size_deleted=$((size_deleted + aux_cum))
                         deleted=$((deleted + aux_count))
                     fi
                 fi
+
             done
+
         fi
+
     done
 
     echo "While backing $diretoria_atual: $errors warnings, $updated updated, $copied copied (${size_copied}B) and $deleted deleted (${size_deleted}B)."
-    echo -e "\n"
+    # echo -e "\n"
 }
 
 function main(){
@@ -154,7 +170,7 @@ function main(){
         read_exclusion_list "$file_txt"
     fi
     
-    [ ! -e "$path_diretoria_destino" ] && execute mkdir -p "$path_diretoria_destino"
+    [ ! -e "$path_diretoria_destino" ] && mkdir -p "$path_diretoria_destino"
     
     backup_gen "$starting_dir" "$path_diretoria_destino" 
 }

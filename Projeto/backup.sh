@@ -48,9 +48,15 @@ function backup_gen(){
                 continue
         fi
 
-        relative_path_start="${file#$starting_dir/}"
-        path_backup_file="$path_diretoria_destino/$relative_path_start"
-
+        path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
+        path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+        path_original_dir="$starting_dir/${diretoria_atual#$starting_dir/}"
+        
+        if [ "$diretoria_atual" == "$starting_dir" ];then
+            path_backup_dir="$path_diretoria_destino"
+            path_original_dir="$starting_dir"
+        fi
+        
         backup_dir=$(dirname "$path_backup_file")
         
         if [ ! -e $path_backup_file ]; then
@@ -74,20 +80,35 @@ function backup_gen(){
         
             if [ -f "$path_backup_file" ]; then
             
-                if [ ! -e $file ]; then
-                    execute rm $path_backup_file;
-                elif [ $file -nt $path_diretoria_destino ];then                    
-                        execute "cp -a" "$file" "$path_backup_file"
+                if [ $file -nt $path_diretoria_destino ];then                    
+                    execute "cp -a" "$file" "$path_backup_file"
                 fi
 
             elif [ -d "$file" ]; then
-                if [ ! -e "$file" ]; then
-                    echo "Dir $file has been deleted. Deleting."
-                    execute rm -r $path_backup_file
-                    continue
-                fi
                 backup_gen "$file" "$path_diretoria_destino" 
             fi
+        fi
+
+        count_backup=$(ls -1 "$path_backup_dir" | wc -l)
+        count_original=$(ls -1 "$path_original_dir" | wc -l)
+
+        if [ "$count_backup" -gt "$count_original" ]; then
+
+            for backupfile in "$path_backup_dir"/*; do
+                filename=$(basename "$backupfile")
+                
+                if [ ! -e "$path_original_dir/$filename" ]; then
+
+                    if [ -f "$backupfile" ]; then
+                        execute rm "$backupfile"
+
+                    elif [ -d "$backupfile" ]; then
+                        execute rm -r "$backupfile"
+                    fi
+                fi
+
+            done
+            
         fi
     done
 
