@@ -32,8 +32,6 @@ execute() {
     if [ "$flag_c" = "false" ];then
         eval "${@}" || {((errors++));return 1;}
     fi
-
-    echo "${@}"
 }
 
 function read_exclusion_list() {
@@ -76,6 +74,8 @@ function backup_gen(){
         path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
         path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
         path_original_dir="$starting_dir/${diretoria_atual#$starting_dir/}"
+        relative_backup_file="$(basename "$end_dir")/${path_backup_file#$end_dir/}"
+        relative_path="$(basename "$starting_dir")/${file#$starting_dir/}"
 
         if [ "$diretoria_atual" == "$starting_dir" ];then
             path_backup_dir="$path_diretoria_destino"
@@ -94,9 +94,10 @@ function backup_gen(){
                     echo "Skipping $file: doesnt match the provided expression. "
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
-                    execute cp -a "$file" "$path_backup_file"
+                    cp -a "$file" "$path_backup_file"
+                    echo "cp -a $relative_path $relative_backup_file"
                     if [ $? -eq 0 ];then
-                        ((copied++))
+                        ((copied++)) 
                         size_copied=$((size_copied + $(stat --format="%s" "$file")))
                     fi 
                 fi    
@@ -110,9 +111,10 @@ function backup_gen(){
 
             if [ -f "$path_backup_file" ]; then
             
-                if [ $path_backup_file -ot $file ];then                    
-                        execute "cp -a" "$file" "$path_backup_file"
-                        [ $? -eq 0 ] && ((updated++)) && ((warnings++))
+                if [ "$file" -nt "$path_backup_file" ];then                    
+                        cp -a "$file" "$path_backup_file"
+                        echo "cp -a $relative_path $relative_backup_file"
+                        [ $? -eq 0 ] && ((updated++)) #&& ((warnings++))
                 fi
 
             elif [ -d "$file" ]; then
