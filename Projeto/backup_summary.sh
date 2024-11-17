@@ -1,37 +1,49 @@
 #!/bin/bash
 #antigo belito
 function check_dir_integ(){
-    if [ -z "$1" ] || [ ! -d "$1" ]; then
-        echo "Error: Source directory '$1' is not a valid path."
-        exit 1
-    fi
+    if  ! $flag_c ;then
+        if [ -z "$1" ] || [ ! -d "$1" ]; then
+            echo "Error: Source directory '$1' is not a valid path."
+            exit 1
+        fi
 
-    if [ -z "$2" ] || [ ! -d "$2" ]; then
-        echo "Error: Destination directory '$2' is not a valid path."
-        exit 1
-    fi
+        if [ ! -e "$2" ] && [ -d "$(dirname "$2")" ]; then
+            execute mkdir -p "$2"
+        fi
+        
 
-    if [ "$1" == "$2" ]; then
-        echo "Erro: O diretório de origem e destino não podem ser os mesmos."
-        exit 1
-    fi
+        if [ -z "$2" ] || [ ! -d "$2" ]; then
+            echo "Error: Destination directory '$2' is not a valid path."
+            exit 1
+        fi
+        
 
-   if [[ ! -r "$1" ]]; then
-        echo "Erro: Sem permissão de leitura no diretório '$1'."
-        exit 1
-    fi
+        if [ "$1" == "$2" ]; then
+            echo "Erro: O diretório de origem e destino não podem ser os mesmos."
+            exit 1
+        fi
 
-    if [[ ! -w "$2" ]] || [[ ! -r "$2" ]]; then
-        echo "Erro: Sem permissão de escrita ou de leitura no diretório '$2'."
-        exit 1
+        if [[ ! -r "$1" ]]; then
+            echo "Erro: Sem permissão de leitura no diretório '$1'."
+            exit 1
+        fi
+
+        if [[ ! -w "$2" ]] || [[ ! -r "$2" ]]; then
+            echo "Erro: Sem permissão de escrita ou de leitura no diretório '$2'."
+            exit 1
+        fi
     fi
 }
 
-execute() {
 
-    if [ "$flag_c" = "false" ];then
-        eval "${@}" || {((errors++));return 1;}
+execute() {
+    
+    if [ "$flag_c" = "false" ]; then
+        "$@" || { ((errors++)); return 1; }
     fi
+
+    return 0
+
 }
 
 function read_exclusion_list() {
@@ -64,6 +76,17 @@ function backup_gen(){
     local size_deleted=0
     local size_copied=0
 
+    dir_backup="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+
+    [ "$diretoria_atual" == "$starting_dir" ] && dir_backup="$path_diretoria_destino"
+
+    
+
+    if [[ ! -d "$dir_backup" ]] ;then
+        execute mkdir -p "$dir_backup"
+        [ $dir_backup != $end_dir ] && echo "mkdir ${dir_backup#$end_dir}"
+    fi
+
     for file in "$diretoria_atual"/*; do
 
         if is_excluded "$file" "$diretoria_atual"; then
@@ -72,29 +95,27 @@ function backup_gen(){
         fi
 
         path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
-        path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+      
         path_original_dir="$starting_dir/${diretoria_atual#$starting_dir/}"
         relative_backup_file="$(basename "$end_dir")/${path_backup_file#$end_dir/}"
         relative_path="$(basename "$starting_dir")/${file#$starting_dir/}"
+      
 
-        if [ "$diretoria_atual" == "$starting_dir" ];then
-            path_backup_dir="$path_diretoria_destino"
-            path_original_dir="$starting_dir"
-        fi
+        
 
         backup_dir=$(dirname "$path_backup_file")
         
         if [ ! -e $path_backup_file ]; then
 
            
-            [ ! -e "$backup_dir" ] && execute mkdir -p "$backup_dir"
+            
             
             if [ -f "$file" ]; then
                 if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
                     echo "Skipping $file: doesnt match the provided expression. "
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
-                    cp -a "$file" "$path_backup_file"
+                    execute cp -a "$file" "$path_backup_file"
                     echo "cp -a $relative_path $relative_backup_file"
                     if [ $? -eq 0 ];then
                         ((copied++)) 
@@ -112,7 +133,7 @@ function backup_gen(){
             if [ -f "$path_backup_file" ]; then
             
                 if [ "$file" -nt "$path_backup_file" ];then                    
-                        cp -a "$file" "$path_backup_file"
+                        execute cp -a "$file" "$path_backup_file"
                         echo "cp -a $relative_path $relative_backup_file"
                         [ $? -eq 0 ] && ((updated++)) #&& ((warnings++))
                 fi
@@ -122,25 +143,36 @@ function backup_gen(){
             fi
         fi
 
+
+        
+
+    done
+
+    path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+
+    [ "$diretoria_atual" == "$starting_dir" ] && path_backup_dir="$path_diretoria_destino"
+    
+    if [ -d  "$path_backup_dir" ];then
         count_backup=$(ls -1 "$path_backup_dir" | wc -l)
-        count_original=$(ls -1 "$path_original_dir" | wc -l)
+        count_original=$(ls -1 "$diretoria_atual" | wc -l)
 
         if [ "$count_backup" -gt "$count_original" ]; then
 
             for backupfile in "$path_backup_dir"/*; do
                 filename=$(basename "$backupfile")
                 
-                if [ ! -e "$path_original_dir/$filename" ]; then
+                if [ ! -e "$diretoria_atual/$filename" ]; then
 
                     if [ -f "$backupfile" ]; then
                         aux_cum=$(stat --format=%s "$backupfile")
                         aux_count=1
                         execute rm "$backupfile"
-
+                        echo "rm ${backupfile#$end_dir}"
                     elif [ -d "$backupfile" ]; then
                         aux_cum=$(du -sb "$backupfile" | cut -f1)
                         aux_count=$(find "$backupfile" -type f | wc -l)
                         execute rm -r "$backupfile"
+                        echo "rm -r ${backupfile#$end_dir}"
                     fi
 
                     if [ $? -eq 0 ]; then
@@ -152,11 +184,10 @@ function backup_gen(){
             done
 
         fi
+    fi
 
-    done
 
     echo "While backuping ${diretoria_atual#$dir/}: $errors Errors; $warnings Warnings; $updated Updated; $copied Copied (${size_copied}B); $deleted Deleted (${size_deleted}B)"
-    # echo -e "\n"
 }
 
 function main(){

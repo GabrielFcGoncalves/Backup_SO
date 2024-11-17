@@ -18,20 +18,26 @@ function dir_checker(){
     diretoria_atual="$1"
     path_diretoria_destino="$2"
 
+    original_dir=$(dirname "$starting_dir")
+    backup_dir=$(dirname "$path_diretoria_destino")
+
     for file in "$diretoria_atual"/*; do
         
         relative_path="${file#$starting_dir/}"
         path_backup_file="$path_diretoria_destino/$relative_path"
 
-        if [ -f "$$file" ]; then
+        if [ -f "$file" ]; then
 
             md5_source=$(md5sum "$file" | awk '{ print $1 }')
             md5_backup=$(md5sum "$path_backup_file" | awk '{ print $1 }')
 
+
             if [ "$md5_source" != "$md5_backup" ]; then
-                echo "$file $path_backup_file differ."
+                echo "${file#$original_dir/} ${path_backup_file#$backup_dir/} differ."
             fi
-            else  dir_checker "$file" "$path_diretoria_destino"
+
+        else  
+            dir_checker "$file" "$path_diretoria_destino"
         fi
    
     done
@@ -49,7 +55,4 @@ if [[ "$end_dir" != /* ]]; then
     end_dir=$(realpath "$2")
 fi
 
-path_diretoria_destino="$end_dir/$(basename "$starting_dir")_backup"
-
-
-dir_checker $starting_dir $path_diretoria_destino
+dir_checker $starting_dir $end_dir

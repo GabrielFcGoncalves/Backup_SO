@@ -1,29 +1,56 @@
 #!/bin/bash
 #antigo belito
 function check_dir_integ(){
-    if [ -z "$1" ] || [ ! -d "$1" ]; then
-    echo "Error: Source directory '$1' is not a valid path."
-    exit 1
-    fi
+    if ! $flag_c ;then
+        if [ -z "$1" ] || [ ! -d "$1" ]; then
+            echo "Error: Source directory '$1' is not a valid path."
+            exit 1
+        fi
 
-    if [ -z "$2" ] || [ ! -d "$2" ]; then
-        echo "Error: Destination directory '$2' is not a valid path."
-        exit 1
+        if [ ! -e "$2" ] && [ -d "$(dirname "$2")" ]; then
+            echo "Creating directory: $2"
+            execute mkdir -p "$2"
+        fi
+        
+
+        if [ -z "$2" ] || [ ! -d "$2" ]; then
+            echo "Error: Destination directory '$2' is not a valid path."
+            exit 1
+        fi
+        
+
+        if [ "$1" == "$2" ]; then
+            echo "Erro: O diretório de origem e destino não podem ser os mesmos."
+            exit 1
+        fi
+
+        if [[ ! -r "$1" ]]; then
+            echo "Erro: Sem permissão de leitura no diretório '$1'."
+            exit 1
+        fi
+
+        if [[ ! -w "$2" ]] || [[ ! -r "$2" ]]; then
+            echo "Erro: Sem permissão de escrita ou de leitura no diretório '$2'."
+            exit 1
+        fi
     fi
 }
 
+
 execute() {
-    if [ "$flag_c" = "false" ];then
-        eval "${@}" || return;
+    
+    if [ "$flag_c" = "false" ]; then
+        "$@" || { return 1; }
     fi
-    echo "${@}"
+
+    return 0
+
 }
 
 function read_exclusion_list() {
     local exclusion_file="$1"
     exclusion_list=()
-    while IFS= read -r line; do
-        [[ "$line" != /* ]] && line="$starting_dir/$line"
+    while IFS= read -r line; do 
         exclusion_list+=("$line")
     done < "$exclusion_file"
 }
@@ -31,7 +58,8 @@ function read_exclusion_list() {
 function is_excluded() {
     local path="$1"
     for excluded in "${exclusion_list[@]}"; do
-        [[ "$path" == "$excluded" ]] && return 0
+        excluded="$2/$(basename "$excluded")" && [[ "$excluded" != /* ]] 
+        [[ "$path" == "$excluded" || "$path" == "$excluded/"* ]] && return 0
     done
     return 1
 }
@@ -41,27 +69,33 @@ function backup_gen(){
     local diretoria_atual="$1"
     local path_diretoria_destino="$2"
 
+    dir_backup="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+
+    [ "$diretoria_atual" == "$starting_dir" ] && dir_backup="$path_diretoria_destino"
+
+    
+
+    if [[ ! -d "$dir_backup" ]] ;then
+        execute mkdir -p "$dir_backup"
+        [ $dir_backup != $end_dir ] && echo "mkdir ${dir_backup#$end_dir}"
+    fi
+
     for file in "$diretoria_atual"/*; do
 
-        if is_excluded "$file"; then
-                echo "Skipping excluded file or directory: $file"
-                continue
+        if is_excluded "$file" "$diretoria_atual"; then
+            echo "Skipping excluded file or directory: $file"
+            continue
         fi
 
         path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
-        path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+      
         path_original_dir="$starting_dir/${diretoria_atual#$starting_dir/}"
-        
-        if [ "$diretoria_atual" == "$starting_dir" ];then
-            path_backup_dir="$path_diretoria_destino"
-            path_original_dir="$starting_dir"
-        fi
-        
+        relative_backup_file="$(basename "$end_dir")/${path_backup_file#$end_dir/}"
+        relative_path="$(basename "$starting_dir")/${file#$starting_dir/}"
+
         backup_dir=$(dirname "$path_backup_file")
         
         if [ ! -e $path_backup_file ]; then
-
-            [ ! -e "$backup_dir" ] && execute mkdir -p "$backup_dir"
             
             if [ -f "$file" ]; then
                 if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
@@ -69,6 +103,7 @@ function backup_gen(){
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
                     execute cp -a "$file" "$path_backup_file"
+                    echo "cp -a $relative_path $relative_backup_file"
                 fi    
 
             elif [ -d "$file" ]; then
@@ -77,11 +112,12 @@ function backup_gen(){
             
         
         else
-        
+
             if [ -f "$path_backup_file" ]; then
             
-                if [ $file -nt $path_diretoria_destino ];then                    
-                    execute "cp -a" "$file" "$path_backup_file"
+                if [ "$file" -nt "$path_backup_file" ];then                    
+                        execute cp -a "$file" "$path_backup_file"
+                        echo "cp -a $relative_path $relative_backup_file"
                 fi
 
             elif [ -d "$file" ]; then
@@ -89,48 +125,55 @@ function backup_gen(){
             fi
         fi
 
+    done
+
+
+    path_backup_dir="$path_diretoria_destino/${diretoria_atual#$starting_dir/}"
+
+    [ "$diretoria_atual" == "$starting_dir" ] && path_backup_dir="$path_diretoria_destino"
+    
+    if [ -d  "$path_backup_dir" ];then
         count_backup=$(ls -1 "$path_backup_dir" | wc -l)
-        count_original=$(ls -1 "$path_original_dir" | wc -l)
+        count_original=$(ls -1 "$diretoria_atual" | wc -l)
 
         if [ "$count_backup" -gt "$count_original" ]; then
 
             for backupfile in "$path_backup_dir"/*; do
                 filename=$(basename "$backupfile")
                 
-                if [ ! -e "$path_original_dir/$filename" ]; then
+                if [ ! -e "$diretoria_atual/$filename" ]; then
 
                     if [ -f "$backupfile" ]; then
                         execute rm "$backupfile"
-
+                        echo "rm ${backupfile#$end_dir}"
                     elif [ -d "$backupfile" ]; then
                         execute rm -r "$backupfile"
+                        echo "rm -r ${backupfile#$end_dir}"
                     fi
+
                 fi
 
             done
-            
+
         fi
-    done
+    fi
 
 }
 
 function main(){
     check_dir_integ $1 $2
 
-    starting_dir=$1
-    [[ "$starting_dir" != /* ]] && starting_dir=$(readlink -f "$1")
-
-
-    end_dir=$2
-    [[ "$end_dir" != /* ]] && end_dir=$(realpath "$2")   
+    starting_dir=$(readlink -f "$1")
+    end_dir=$(realpath "$2") 
 
     if $flag_b; then
         read_exclusion_list "$file_txt"
     fi
-
+        
     backup_gen "$starting_dir" "$end_dir" 
 }
 
+dir=$(pwd)
 flag_c=false
 flag_b=false
 flag_r=false
