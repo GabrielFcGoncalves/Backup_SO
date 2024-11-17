@@ -84,21 +84,23 @@ function backup_gen(){
 
     if [[ ! -d "$dir_backup" ]] ;then
         execute mkdir -p "$dir_backup"
-        [ $dir_backup != $end_dir ] && echo "mkdir ${dir_backup#$end_dir}"
+        [ $dir_backup != $end_dir ] && echo "mkdir $(basename "$end_dir")${dir_backup#$end_dir}"
     fi
 
     for file in "$diretoria_atual"/*; do
-
-        if is_excluded "$file" "$diretoria_atual"; then
-            echo "Skipping excluded file or directory: $file"
-            continue
-        fi
 
         path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
       
         path_original_dir="$starting_dir/${diretoria_atual#$starting_dir/}"
         relative_backup_file="$(basename "$end_dir")/${path_backup_file#$end_dir/}"
         relative_path="$(basename "$starting_dir")/${file#$starting_dir/}"
+
+        if is_excluded "$file" "$diretoria_atual"; then
+            echo "Skipping excluded file or directory: $relative_path"
+            ((warnings++))
+            continue
+        fi
+
       
 
         
@@ -112,7 +114,8 @@ function backup_gen(){
             
             if [ -f "$file" ]; then
                 if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
-                    echo "Skipping $file: doesnt match the provided expression. "
+                    echo "Skipping $relative_path: doesnt match the provided expression. "
+                    ((warnings++))
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
                     execute cp -a "$file" "$path_backup_file"
@@ -167,12 +170,12 @@ function backup_gen(){
                         aux_cum=$(stat --format=%s "$backupfile")
                         aux_count=1
                         execute rm "$backupfile"
-                        echo "rm ${backupfile#$end_dir}"
+                        echo "rm $(basename "$end_dir")${backupfile#$end_dir}"
                     elif [ -d "$backupfile" ]; then
                         aux_cum=$(du -sb "$backupfile" | cut -f1)
                         aux_count=$(find "$backupfile" -type f | wc -l)
                         execute rm -r "$backupfile"
-                        echo "rm -r ${backupfile#$end_dir}"
+                        echo "rm -r $(basename "$end_dir")${backupfile#$end_dir}"
                     fi
 
                     if [ $? -eq 0 ]; then
