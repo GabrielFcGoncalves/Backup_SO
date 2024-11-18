@@ -96,7 +96,7 @@ function backup_gen(){
         relative_path="$(basename "$starting_dir")/${file#$starting_dir/}"
 
         if is_excluded "$file" "$diretoria_atual"; then
-            echo "Skipping excluded file or directory: $relative_path"
+            echo "WARNING: Skipping excluded file or directory: $relative_path"
             ((warnings++))
             continue
         fi
@@ -114,12 +114,12 @@ function backup_gen(){
             
             if [ -f "$file" ]; then
                 if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
-                    echo "Skipping $relative_path: doesnt match the provided expression. "
+                    echo "WARNING: Skipping $relative_path: doesnt match the provided expression. "
                     ((warnings++))
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
-                    execute cp -a "$file" "$path_backup_file"
                     echo "cp -a $relative_path $relative_backup_file"
+                    execute cp -a "$file" "$path_backup_file"
                     if [ $? -eq 0 ];then
                         ((copied++)) 
                         size_copied=$((size_copied + $(stat --format="%s" "$file")))
@@ -136,8 +136,8 @@ function backup_gen(){
             if [ -f "$path_backup_file" ]; then
             
                 if [ "$file" -nt "$path_backup_file" ];then                    
-                        execute cp -a "$file" "$path_backup_file"
                         echo "cp -a $relative_path $relative_backup_file"
+                        execute cp -a "$file" "$path_backup_file"
                         [ $? -eq 0 ] && ((updated++)) #&& ((warnings++))
                 elif [ "$path_backup_file" -nt "$file" ];then
                     echo "WARNING: backup entry $relative_backup_file is newer than $relative_path; Should not happen"
@@ -171,13 +171,13 @@ function backup_gen(){
                     if [ -f "$backupfile" ]; then
                         aux_cum=$(stat --format=%s "$backupfile")
                         aux_count=1
-                        execute rm "$backupfile"
                         echo "rm $(basename "$end_dir")${backupfile#$end_dir}"
+                        execute rm "$backupfile"
                     elif [ -d "$backupfile" ]; then
                         aux_cum=$(du -sb "$backupfile" | cut -f1)
                         aux_count=$(find "$backupfile" -type f | wc -l)
-                        execute rm -r "$backupfile"
                         echo "rm -r $(basename "$end_dir")${backupfile#$end_dir}"
+                        execute rm -r "$backupfile"
                     fi
 
                     if [ $? -eq 0 ]; then
