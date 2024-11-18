@@ -139,8 +139,10 @@ function backup_gen(){
                         execute cp -a "$file" "$path_backup_file"
                         echo "cp -a $relative_path $relative_backup_file"
                         [ $? -eq 0 ] && ((updated++)) #&& ((warnings++))
-                fi
-
+                elif [ "$path_backup_file" -nt "$file" ];then
+                    echo "WARNING: backup entry $relative_backup_file is newer than $relative_path; Should not happen"
+                    ((warnings++))
+                fi    
             elif [ -d "$file" ]; then
                 backup_gen "$file" "$path_diretoria_destino" 
             fi
