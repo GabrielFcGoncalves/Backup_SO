@@ -2,7 +2,7 @@
 #antigo belito
 function check_dir_integ(){
     if  ! $flag_c ;then
-        if [ -z "$1" ] || [ ! -d "$1" ]; then
+        if [ ! -d "$1" ]; then
             echo "Error: Source directory '$1' is not a valid path."
             exit 1
         fi
@@ -12,7 +12,7 @@ function check_dir_integ(){
         fi
         
 
-        if [ -z "$2" ] || [ ! -d "$2" ]; then
+        if [ ! -d "$2" ]; then
             echo "Error: Destination directory '$2' is not a valid path."
             exit 1
         fi
