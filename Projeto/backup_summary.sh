@@ -7,7 +7,7 @@ function check_dir_integ(){
             exit 1
         fi
 
-        if [ ! -e "$2" ] && [ -d "$(dirname "$2")" ]; then
+        if [ ! -e "$2" ] && [ -d "$(dirname "$2")" ];then
             execute mkdir -p "$2"
         fi
         
@@ -16,12 +16,7 @@ function check_dir_integ(){
             echo "Error: Destination directory '$2' is not a valid path."
             exit 1
         fi
-        
 
-        if [ "$1" == "$2" ]; then
-            echo "Erro: O diretório de origem e destino não podem ser os mesmos."
-            exit 1
-        fi
 
         if [[ ! -r "$1" ]]; then
             echo "Erro: Sem permissão de leitura no diretório '$1'."
@@ -138,7 +133,7 @@ function backup_gen(){
                 if [ "$file" -nt "$path_backup_file" ];then                    
                         echo "cp -a $relative_path $relative_backup_file"
                         execute cp -a "$file" "$path_backup_file"
-                        [ $? -eq 0 ] && ((updated++)) #&& ((warnings++))
+                        [ $? -eq 0 ] && ((updated++))
                 elif [ "$path_backup_file" -nt "$file" ];then
                     echo "WARNING: backup entry $relative_backup_file is newer than $relative_path; Should not happen"
                     ((warnings++))
@@ -200,6 +195,11 @@ function main(){
 
     starting_dir=$(readlink -f "$1")
     end_dir=$(realpath "$2") 
+
+    if [[ "$end_dir" == "$starting_dir"* ]]; then
+        echo "Error: Destination directory '$2' is a subdirectory of source directory '$1'."
+        exit 1
+    fi
 
     if $flag_b; then
         read_exclusion_list "$file_txt"
