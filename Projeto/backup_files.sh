@@ -6,12 +6,12 @@ function check_dir_integ(){
             mkdir -p "$2"
         fi
 
-        if [ -z "$1" ] || [ ! -d "$1" ]; then
+        if [ ! -d "$1" ]; then
         echo "Error: Source directory '$1' is not a valid path."
         exit 1
         fi
 
-        if [ -z "$2" ] || [ ! -d "$2" ]; then
+        if [ ! -d "$2" ]; then
             echo "Error: Destination directory '$2' is not a valid path."
             exit 1
         fi
@@ -24,14 +24,17 @@ function Backup_files(){
     path_diretoria_destino="$2"
 
     for file in "$diretoria_atual"/*; do
+    path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
+    relative_backup_file="$(basename "$end_dir")/${path_backup_file#$end_dir/}"
 
         if [ -f "$file" ]; then
             if [ ! -e "$path_diretoria_destino/$(basename $file)" ]; then
-               echo "cp -a" "${file#$starting_dir/}" "$(basename "$path_diretoria_destino")"
+               echo "cp -a" "${file#$dir/}" "$relative_backup_file"
                 cp -a "$file" "$path_diretoria_destino"
 
             elif [ "$path_diretoria_destino" -ot "$file" ]; then
-                echo "cp -a" "${file#$starting_dir/}" "$(basename "$path_diretoria_destino")"
+                echo "${file#$dir/}" has been updated.
+                echo "cp -a" "${file#$dir/}" "$relative_backup_file"
                 cp -a "$file" "$path_diretoria_destino"  
             fi
         fi
@@ -45,14 +48,15 @@ function Backup_files_c(){
     path_diretoria_destino="$2"
 
     for file in "$diretoria_atual"/*; do
+    path_backup_file="$path_diretoria_destino/${file#$starting_dir/}"
+    relative_backup_file="$(basename "$end_dir")/${path_backup_file#$end_dir/}"
 
         if [ -f "$file" ]; then
             if [ ! -e "$path_diretoria_destino/$(basename $file)" ]; then
-                echo "cp -a" "${file#$starting_dir/}" "$(basename "$path_diretoria_destino")"
+               echo "cp -a" "${file#$dir/}" "$relative_backup_file"
 
-           elif [ $file -nt $path_diretoria_destino ];then   
-                echo "cp -a" "${file#$starting_dir/}" "$(basename "$path_diretoria_destino")"
-                
+            elif [ "$path_diretoria_destino" -ot "$file" ]; then
+                echo "cp -a" "${file#$dir/}" "$relative_backup_file" 
             fi
         fi
 
@@ -75,8 +79,7 @@ function main(){
     path_diretoria_destino="$end_dir"
 
     if $check_flag; then
-
-        [ ! -e "$path_diretoria_destino" ] && Backup_files_c "$starting_dir" "$path_diretoria_destino"
+        Backup_files_c "$starting_dir" "$path_diretoria_destino"
     
     else
         Backup_files "$starting_dir" "$path_diretoria_destino"
@@ -86,6 +89,7 @@ function main(){
 }
 
 check_flag=false
+dir=$(pwd)
 
 while getopts ":c" opt; do
     case $opt in

@@ -1,19 +1,18 @@
 #!/bin/bash
 #antigo belito
 function check_dir_integ(){
-    if ! $flag_c ;then
-        if [ -z "$1" ] || [ ! -d "$1" ]; then
+    if  ! $flag_c ;then
+        if [ ! -d "$1" ]; then
             echo "Error: Source directory '$1' is not a valid path."
             exit 1
         fi
 
         if [ ! -e "$2" ] && [ -d "$(dirname "$2")" ]; then
-            echo "Creating directory: $2"
             execute mkdir -p "$2"
         fi
         
 
-        if [ -z "$2" ] || [ ! -d "$2" ]; then
+        if [ ! -d "$2" ]; then
             echo "Error: Destination directory '$2' is not a valid path."
             exit 1
         fi
@@ -35,6 +34,7 @@ function check_dir_integ(){
         fi
     fi
 }
+
 
 
 execute() {
@@ -89,7 +89,7 @@ function backup_gen(){
         relative_path="$(basename "$starting_dir")/${file#$starting_dir/}"
 
         if is_excluded "$file" "$diretoria_atual"; then
-            echo "Skipping excluded file or directory: $relative_path"
+            echo "WARNING: Skipping excluded file or directory: $relative_path"
             continue
         fi
 
@@ -100,11 +100,11 @@ function backup_gen(){
             
             if [ -f "$file" ]; then
                 if [[ ! "$file" =~ $expression ]] && [[ $flag_r ]] ; then
-                    echo "Skipping $relative_path: doesnt match the provided expression. "
+                    echo "WARNING: Skipping $relative_path: doesnt match the provided expression. "
                     continue
                 elif [ ! -e "$path_backup_file" ]; then 
-                    execute cp -a "$file" "$path_backup_file"
                     echo "cp -a $relative_path $relative_backup_file"
+                    execute cp -a "$file" "$path_backup_file"
                 fi    
 
             elif [ -d "$file" ]; then
@@ -117,8 +117,8 @@ function backup_gen(){
             if [ -f "$path_backup_file" ]; then
             
                 if [ "$file" -nt "$path_backup_file" ];then                    
-                        execute cp -a "$file" "$path_backup_file"
                         echo "cp -a $relative_path $relative_backup_file"
+                        execute cp -a "$file" "$path_backup_file"
                 fi
 
             elif [ -d "$file" ]; then
@@ -145,11 +145,11 @@ function backup_gen(){
                 if [ ! -e "$diretoria_atual/$filename" ]; then
 
                     if [ -f "$backupfile" ]; then
-                        execute rm "$backupfile"
                         echo "rm $(basename "$end_dir")${backupfile#$end_dir}"
+                        execute rm "$backupfile"
                     elif [ -d "$backupfile" ]; then
-                        execute rm -r "$backupfile"
                         echo "rm -r $(basename "$end_dir")${backupfile#$end_dir}"
+                        execute rm -r "$backupfile"
                     fi
 
                 fi

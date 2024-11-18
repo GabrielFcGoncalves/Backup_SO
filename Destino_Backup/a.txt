@@ -1,2 +1,0 @@
-Chanfana.txt
-prog1.c
